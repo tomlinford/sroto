@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package protobuf_example;
+
+import "example.proto";
+
+message Bug {
+    string description = 1;
+    example.Priority priority = 2;
+}
