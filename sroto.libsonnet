@@ -309,49 +309,140 @@ local addNames(x) =
     CustomServiceOption(type, number):: CustomOption(type, number, "service_option"),
     CustomMethodOption(type, number):: CustomOption(type, number, "method_option"),
 
+    // BytesLiteral and EnumValueLiteral use a bit of a hack.
+    // Neither can really be represented in pure JSON that directly maps to the
+    // format read by protoc. Bytes can be represented as an array of numbers
+    // in JSON which is then rendered as a string with a hex escape sequence.
+    // Enum value literals are rendered in protobuf as the enum value name,
+    // without quotes.
+    // So to do this, we make an object with "reserved" as a key, which should
+    // be an impossible field name in messages (as "reserved" is a keyword).
+    BytesLiteral(value)::
+        if std.isString(value) then value
+        else {
+            reserved: "__bytes_literal__",
+            value: value,
+        },
     EnumValueLiteral(name):: {
-        // This is a bit of a hack. Literal enum values (for option values) are
-        // rendered as the enum value name, without quotes. The IR step will need
-        // to recognize that we're trying to specify a literal enum value which is
-        // effectively a type unsupported by JSON.
-        // So to do this, we make an object with "reserved" as a key, which should
-        // be an impossible field name in messages (as "reserved" is a keyword).
         reserved: "__enum_value_literal__",
         name: name,
     },
 
+    // MapLiteral takes an object and turns it into a protobuf map.
+    // If the key type is not a string, creating the map will have to be done
+    // by the client.
+    MapLiteral(map):: [
+        {key: k, value: map[k]} for k in std.objectFields(map)
+    ],
+
     // Well-known types
     WKT:: {
-        Any:: makeWKT("Any", "any"),  // message
-        Api:: makeWKT("Api", "api"),  // message
-        BoolValue:: makeWKT("BoolValue", "wrappers"),  // message
-        BytesValue:: makeWKT("BytesValue", "wrappers"),  // message
-        DoubleValue:: makeWKT("DoubleValue", "wrappers"),  // message
-        Duration:: makeWKT("Duration", "duration"),  // message
-        Empty:: makeWKT("Empty", "empty"),  // message
-        Enum:: makeWKT("Enum", "type"),  // message
-        EnumValue:: makeWKT("EnumValue", "type"),  // message
-        Field:: makeWKT("Field", "type") {  // message
-            Cardinality:: makeWKT("Field.Cardinality", "type"),  // enum
-            Kind:: makeWKT("Field.Kind", "type"),  // enum
+        local type(name, filename_root) = {
+            name: name,
+            package: "google.protobuf",
+            filename: "google/protobuf/%s.proto" % [filename_root],
         },
-        FieldMask:: makeWKT("FieldMask", "field_mask"),  // message
-        FloatValue:: makeWKT("FloatValue", "wrappers"),  // message
-        Int32Value:: makeWKT("Int32Value", "wrappers"),  // message
-        Int64Value:: makeWKT("Int64Value", "wrappers"),  // message
-        ListValue:: makeWKT("ListValue", "struct"),  // message
-        Method:: makeWKT("Method", "api"),  // message
-        Mixin:: makeWKT("Mixin", "api"),  // message
-        NullValue:: makeWKT("NullValue", "struct"),  // enum
-        Option:: makeWKT("Option", "type"),  // message
-        SourceContext:: makeWKT("SourceContext", "source_context"),  // message
-        StringValue:: makeWKT("StringValue", "wrappers"),  // message
-        Struct:: makeWKT("Struct", "struct"),  // message
-        Syntax:: makeWKT("Syntax", "type"),  // enum
-        Timestamp:: makeWKT("Timestamp", "timestamp"),  // message
-        Type:: makeWKT("Type", "type"),  // message
-        UInt32Value:: makeWKT("UInt32Value", "wrappers"),  // message
-        UInt64Value:: makeWKT("UInt64Value", "wrappers"),  // message
-        Value:: makeWKT("Value", "struct"),  // message
+        local enum(name, filename_root, enum) =
+            type(name, filename_root) + enum,
+        Any:: type("Any", "any"),
+        Api:: type("Api", "api"),
+        BoolValue:: type("BoolValue", "wrappers"),
+        BytesValue:: type("BytesValue", "wrappers"),
+        DoubleValue:: type("DoubleValue", "wrappers"),
+        Duration:: type("Duration", "duration"),
+        Empty:: type("Empty", "empty"),
+        Enum:: type("Enum", "type"),
+        EnumValue:: type("EnumValue", "type"),
+        Field:: type("Field", "type") {
+            Cardinality:: enum("Field.Cardinality", "type", {
+                CARDINALITY_UNKNOWN::
+                    $.EnumValueLiteral("CARDINALITY_UNKNOWN"),
+                CARDINALITY_OPTIONAL::
+                    $.EnumValueLiteral("CARDINALITY_OPTIONAL"),
+                CARDINALITY_REQUIRED::
+                    $.EnumValueLiteral("CARDINALITY_REQUIRED"),
+                CARDINALITY_REPEATED::
+                    $.EnumValueLiteral("CARDINALITY_REPEATED"),
+            }),
+            Kind:: enum("Field.Kind", "type", {
+                TYPE_UNKNOWN:: $.EnumValueLiteral("TYPE_UNKNOWN"),
+                TYPE_DOUBLE:: $.EnumValueLiteral("TYPE_DOUBLE"),
+                TYPE_FLOAT:: $.EnumValueLiteral("TYPE_FLOAT"),
+                TYPE_INT64:: $.EnumValueLiteral("TYPE_INT64"),
+                TYPE_UINT64:: $.EnumValueLiteral("TYPE_UINT64"),
+                TYPE_INT32:: $.EnumValueLiteral("TYPE_INT32"),
+                TYPE_FIXED64:: $.EnumValueLiteral("TYPE_FIXED64"),
+                TYPE_FIXED32:: $.EnumValueLiteral("TYPE_FIXED32"),
+                TYPE_BOOL:: $.EnumValueLiteral("TYPE_BOOL"),
+                TYPE_STRING:: $.EnumValueLiteral("TYPE_STRING"),
+                TYPE_GROUP:: $.EnumValueLiteral("TYPE_GROUP"),
+                TYPE_MESSAGE:: $.EnumValueLiteral("TYPE_MESSAGE"),
+                TYPE_BYTES:: $.EnumValueLiteral("TYPE_BYTES"),
+                TYPE_UINT32:: $.EnumValueLiteral("TYPE_UINT32"),
+                TYPE_ENUM:: $.EnumValueLiteral("TYPE_ENUM"),
+                TYPE_SFIXED32:: $.EnumValueLiteral("TYPE_SFIXED32"),
+                TYPE_SFIXED64:: $.EnumValueLiteral("TYPE_SFIXED64"),
+                TYPE_SINT32:: $.EnumValueLiteral("TYPE_SINT32"),
+                TYPE_SINT64:: $.EnumValueLiteral("TYPE_SINT64"),
+            }),
+        },
+        FieldMask:: type("FieldMask", "field_mask"),
+        FloatValue:: type("FloatValue", "wrappers"),
+        Int32Value:: type("Int32Value", "wrappers"),
+        Int64Value:: type("Int64Value", "wrappers"),
+        ListValue:: type("ListValue", "struct"),
+        Method:: type("Method", "api"),
+        Mixin:: type("Mixin", "api"),
+        NullValue:: enum("NullValue", "struct", {
+            NULL_VALUE:: $.EnumValueLiteral("NULL_VALUE"),
+        }),
+        Option:: type("Option", "type"),
+        SourceContext:: type("SourceContext", "source_context"),
+        StringValue:: type("StringValue", "wrappers"),
+        Struct:: type("Struct", "struct"),
+        Syntax:: enum("Syntax", "type", {
+            SYNTAX_PROTO2:: $.EnumValueLiteral("SYNTAX_PROTO2"),
+            SYNTAX_PROTO3:: $.EnumValueLiteral("SYNTAX_PROTO3"),
+        }),
+        Timestamp:: type("Timestamp", "timestamp"),
+        Type:: type("Type", "type"),
+        UInt32Value:: type("UInt32Value", "wrappers"),
+        UInt64Value:: type("UInt64Value", "wrappers"),
+        Value:: type("Value", "struct"),
+
+        local simpleLiteral(value) =
+            if value == null then null else {value: value},
+        BoolValueLiteral(value):: simpleLiteral(value),
+        BytesValueLiteral(value)::
+            if value == null then null else {value: $.BytesLiteral(value)},
+        DoubleValueLiteral(value):: simpleLiteral(value),
+        FloatValueLiteral(value):: simpleLiteral(value),
+        Int32ValueLiteral(value):: simpleLiteral(value),
+        Int64ValueLiteral(value):: simpleLiteral(value),
+        StringValueLiteral(value):: simpleLiteral(value),
+        UInt32ValueLiteral(value):: simpleLiteral(value),
+        UInt64ValueLiteral(value):: simpleLiteral(value),
+
+        ListValueLiteral(values)::
+            if values == null then null else {values: [
+                $.WKT.ValueLiteral(v) for v in values
+            ]},
+        StructLiteral(value)::
+            if value == null then null else {fields: $.MapLiteral({
+                [k]: $.WKT.ValueLiteral(value[k])
+                for k in std.objectFields(value)
+            })},
+        ValueLiteral(value)::
+            if value == null then {null_value: $.WKT.NullValue.NULL_VALUE}
+            else if std.isNumber(value) then {number_value: value}
+            else if std.isString(value) then {string_value: value}
+            else if std.isBoolean(value) then {bool_value: value}
+            else if std.isObject(value) then {
+                struct_value: $.WKT.StructLiteral(value),
+            }
+            else if std.isArray(value) then {
+                list_value: $.WKT.ListValueLiteral(value)
+            }
+            else error "invalid type",
     },
 }

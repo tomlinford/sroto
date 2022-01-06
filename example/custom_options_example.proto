@@ -5,6 +5,8 @@ syntax = "proto3";
 package custom_options_example;
 
 import "google/protobuf/descriptor.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/wrappers.proto";
 
 extend google.protobuf.MessageOptions {
     SQLTableOptions sql_table = 6072;
@@ -22,4 +24,8 @@ enum SQLType {
 
 message SQLTableOptions {
     string table_name = 1;
+    google.protobuf.Struct table_tags = 2;
+    bytes table_bin_data = 3;
+    google.protobuf.StringValue prev_table_name = 4;
+    google.protobuf.StringValue next_table_name = 5;
 }

@@ -101,12 +101,10 @@ type EnumValueLiteral string
 
 func fprintOptionValue(w *codeWriter, value interface{}) {
 	switch optionValue := value.(type) {
-	case bool, float64, int:
+	case bool, float64, int, EnumValueLiteral:
 		fmt.Fprint(&w.b, optionValue)
-	case string:
+	case []byte, string:
 		fmt.Fprintf(&w.b, "%q", optionValue)
-	case EnumValueLiteral:
-		fmt.Fprint(&w.b, optionValue)
 	case map[string]interface{}:
 		fmt.Fprintln(&w.b, "{")
 		w.indent += 1
@@ -123,7 +121,6 @@ func fprintOptionValue(w *codeWriter, value interface{}) {
 		for _, k := range keys {
 			value := optionValue[k]
 			if s, ok := value.([]interface{}); ok {
-				// TODO: test this
 				for _, v := range s {
 					expanded = append(expanded, messageEntry{k, v})
 				}

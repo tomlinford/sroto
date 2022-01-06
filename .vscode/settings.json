@@ -16,6 +16,7 @@
         "protoc",
         "sroto",
         "srotoc",
+        "Struct",
         "structs",
         "templating",
         "vendored"

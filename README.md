@@ -383,6 +383,12 @@ local sroto = import "sroto.libsonnet";
 sroto.File("custom_options_example.proto", "custom_options_example", {
     SQLTableOptions: sroto.Message({
         table_name: sroto.StringField(1),
+        table_tags: sroto.Field(sroto.WKT.Struct, 2),
+        table_bin_data: sroto.BytesField(3),
+        // Obviously using StringValues doesn't really make sense for custom
+        // options, but the example is here for illustrative purposes.
+        prev_table_name: sroto.Field(sroto.WKT.StringValue, 4),
+        next_table_name: sroto.Field(sroto.WKT.StringValue, 5),
     }),
     sql_table: sroto.CustomMessageOption("SQLTableOptions", 6072),
     SQLType: sroto.Enum({
@@ -404,6 +410,8 @@ syntax = "proto3";
 package custom_options_example;
 
 import "google/protobuf/descriptor.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/wrappers.proto";
 
 extend google.protobuf.MessageOptions {
     SQLTableOptions sql_table = 6072;
@@ -421,6 +429,10 @@ enum SQLType {
 
 message SQLTableOptions {
     string table_name = 1;
+    google.protobuf.Struct table_tags = 2;
+    bytes table_bin_data = 3;
+    google.protobuf.StringValue prev_table_name = 4;
+    google.protobuf.StringValue next_table_name = 5;
 }
 ```
 
@@ -440,7 +452,16 @@ sroto.File("using_custom_options_example.proto", "using_custom_options_example",
         }]},
     }) {options+: [{
         type: custom_options_example.sql_table,
-        value: {table_name: "users"},
+        value: {
+            table_name: "users",
+            // Can encode an arbitrary object!
+            table_tags: sroto.WKT.StructLiteral(
+                {foo: "bar", baz: ["qux", "quz"], teapot: null},
+            ),
+            table_bin_data: sroto.BytesLiteral([0, 1, 2, 3, 4, 5, 6, 7, 8]),
+            prev_table_name: sroto.WKT.StringValueLiteral("old_users"),
+            next_table_name: null, // This entry will get omitted.
+        },
     }]},
 })
 ```
@@ -459,7 +480,38 @@ import "custom_options_example.proto";
 
 message UserTable {
     option (custom_options_example.sql_table) = {
-        table_name: "users"
+        prev_table_name: {
+            value: "old_users"
+        },
+        table_bin_data: "\x00\x01\x02\x03\x04\x05\x06\a\b",
+        table_name: "users",
+        table_tags: {
+            fields: {
+                key: "baz",
+                value: {
+                    list_value: {
+                        values: {
+                            string_value: "qux"
+                        },
+                        values: {
+                            string_value: "quz"
+                        }
+                    }
+                }
+            },
+            fields: {
+                key: "foo",
+                value: {
+                    string_value: "bar"
+                }
+            },
+            fields: {
+                key: "teapot",
+                value: {
+                    null_value: NULL_VALUE
+                }
+            }
+        }
     };
 
     string id = 1 [

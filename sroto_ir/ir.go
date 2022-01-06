@@ -359,7 +359,7 @@ func mergeOptions(options []Option) []proto_ast.Option {
 	for i, option := range options {
 		pathsExpanded[i] = Option{
 			Type: option.Type,
-			Value: normalizeEnumValueLiterals(
+			Value: normalizeToProtoAST(
 				expandPath(option.Path, option.Value),
 			),
 		}
@@ -417,23 +417,42 @@ func expandPath(path string, value interface{}) interface{} {
 	return value
 }
 
+// bytes literals will come in the form:
+// {"reserved": "__bytes_literal__", "value": [...]}
 // enum value literals will come in the form:
 // {"reserved": "__enum_value_literal__", "name": "{name}"}
-func normalizeEnumValueLiterals(value interface{}) interface{} {
+// some objects or arrays may have nil values, those will be removed
+func normalizeToProtoAST(value interface{}) interface{} {
 	if m, ok := value.(map[string]interface{}); ok {
 		if m["reserved"] == "__enum_value_literal__" {
 			return proto_ast.EnumValueLiteral(m["name"].(string))
 		}
+		if m["reserved"] == "__bytes_literal__" {
+			arr := m["value"].([]interface{})
+			bytes := make([]byte, len(arr))
+			for i, v := range arr {
+				fv := v.(float64)
+				bytes[i] = byte(fv)
+				if fv != float64(bytes[i]) {
+					panic("json bytes must be an array of numbers in the 0 to 255 range")
+				}
+			}
+			return bytes
+		}
 		newValue := map[string]interface{}{}
 		for k, v := range m {
-			newValue[k] = normalizeEnumValueLiterals(v)
+			if v != nil {
+				newValue[k] = normalizeToProtoAST(v)
+			}
 		}
 		return newValue
 	}
 	if s, ok := value.([]interface{}); ok {
 		newValue := make([]interface{}, len(s))
 		for i, v := range s {
-			newValue[i] = normalizeEnumValueLiterals(v)
+			if v != nil {
+				newValue[i] = normalizeToProtoAST(v)
+			}
 		}
 		return newValue
 	}
