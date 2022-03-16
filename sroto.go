@@ -169,7 +169,7 @@ local manifest(file) =
 	return sb.String()
 }
 
-//go:embed cmd/srotoc/help.txt
+//go:embed srotoc_help.txt
 var srotocHelp string
 
 func printHelp() {
