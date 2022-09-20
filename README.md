@@ -486,31 +486,35 @@ message UserTable {
         table_bin_data: "\x00\x01\x02\x03\x04\x05\x06\a\b",
         table_name: "users",
         table_tags: {
-            fields: {
-                key: "baz",
-                value: {
-                    list_value: {
-                        values: {
-                            string_value: "qux"
-                        },
-                        values: {
-                            string_value: "quz"
+            fields: [
+                {
+                    key: "baz",
+                    value: {
+                        list_value: {
+                            values: [
+                                {
+                                    string_value: "qux"
+                                },
+                                {
+                                    string_value: "quz"
+                                }
+                            ]
                         }
                     }
+                },
+                {
+                    key: "foo",
+                    value: {
+                        string_value: "bar"
+                    }
+                },
+                {
+                    key: "teapot",
+                    value: {
+                        null_value: NULL_VALUE
+                    }
                 }
-            },
-            fields: {
-                key: "foo",
-                value: {
-                    string_value: "bar"
-                }
-            },
-            fields: {
-                key: "teapot",
-                value: {
-                    null_value: NULL_VALUE
-                }
-            }
+            ]
         }
     };
 

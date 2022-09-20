@@ -113,26 +113,12 @@ func fprintOptionValue(w *codeWriter, value any) {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
-		type messageEntry struct {
-			name  string
-			value any
-		}
-		expanded := []messageEntry{}
-		for _, k := range keys {
+		for i, k := range keys {
 			value := optionValue[k]
-			if s, ok := value.([]any); ok {
-				for _, v := range s {
-					expanded = append(expanded, messageEntry{k, v})
-				}
-			} else {
-				expanded = append(expanded, messageEntry{k, value})
-			}
-		}
-		for i, k := range expanded {
 			w.printIndent()
-			fmt.Fprintf(&w.b, "%s: ", k.name)
-			fprintOptionValue(w, k.value)
-			if i < len(expanded)-1 {
+			fmt.Fprintf(&w.b, "%s: ", k)
+			fprintOptionValue(w, value)
+			if i < len(optionValue)-1 {
 				w.b.WriteString(",")
 			}
 			fmt.Fprintln(&w.b)
@@ -140,6 +126,20 @@ func fprintOptionValue(w *codeWriter, value any) {
 		w.indent -= 1
 		w.printIndent()
 		w.b.WriteByte('}')
+	case []any:
+		fmt.Fprintln(&w.b, "[")
+		w.indent += 1
+		for i, v := range optionValue {
+			w.printIndent()
+			fprintOptionValue(w, v)
+			if i < len(optionValue)-1 {
+				w.b.WriteString(",")
+			}
+			fmt.Fprintln(&w.b)
+		}
+		w.indent -= 1
+		w.printIndent()
+		w.b.WriteByte(']')
 	default:
 		panic(fmt.Sprintf("unknown type %T", value))
 	}

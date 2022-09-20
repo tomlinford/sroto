@@ -24,7 +24,7 @@ func TestFprintOptionValue(t *testing.T) {
 		}, "{\n    foo: {\n        bar: 1\n    }\n}"},
 		{"repeated", map[string]any{
 			"foo": []any{1, 2},
-		}, "{\n    foo: 1,\n    foo: 2\n}"},
+		}, "{\n    foo: [\n        1,\n        2\n    ]\n}"},
 	}
 
 	for _, tt := range tests {
