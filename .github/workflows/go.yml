@@ -14,12 +14,12 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: '1.17'
+        go-version: '1.18'
     - uses: actions/checkout@v2
     - name: Setup golangci-lint
       uses: golangci/golangci-lint-action@v2
       with:
-        version: v1.43.0
+        version: v1.49.0
         args: --verbose
 
   test:
@@ -28,7 +28,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: '1.17'
+        go-version: '1.18'
     - uses: arduino/setup-protoc@v1
       with:
         version: '3.9.1'

@@ -3,7 +3,6 @@ package example_test
 import (
 	"bytes"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,7 +15,7 @@ import (
 func TestPopulateExamplesUpToDate(t *testing.T) {
 	// This is just to check that `go generate` has been run since files in README.md
 	// were updated.
-	fileData, err := ioutil.ReadFile("../README.md")
+	fileData, err := os.ReadFile("../README.md")
 	if err != nil {
 		panic(err)
 	}

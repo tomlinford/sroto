@@ -1,13 +1,12 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"regexp"
 )
 
 func main() {
-	fileData, err := ioutil.ReadFile("../README.md")
+	fileData, err := os.ReadFile("../README.md")
 	if err != nil {
 		panic(err)
 	}
