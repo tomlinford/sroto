@@ -29,9 +29,9 @@ func (t *Type) fullName() string {
 }
 
 type Option struct {
-	Type  Type        `json:"type"`
-	Path  string      `json:"path"`
-	Value interface{} `json:"value"`
+	Type  Type   `json:"type"`
+	Path  string `json:"path"`
+	Value any    `json:"value"`
 }
 
 type ReservedRange struct {
@@ -318,7 +318,7 @@ func (f *File) ToAST() *proto_ast.File {
 
 func (f *File) imports() []string {
 	m := make(map[string]struct{})
-	visit(reflect.ValueOf(*f), func(v interface{}) {
+	visit(reflect.ValueOf(*f), func(v any) {
 		if typ, ok := v.(Type); ok && typ.Filename != "" && typ.Filename != f.Name {
 			m[typ.Filename] = struct{}{}
 		} else if _, ok := v.(CustomOption); ok {
@@ -333,7 +333,7 @@ func (f *File) imports() []string {
 	return imports
 }
 
-func visit(v reflect.Value, f func(interface{})) {
+func visit(v reflect.Value, f func(any)) {
 	f(v.Interface())
 	switch v.Type().Kind() {
 	case reflect.Struct:
@@ -349,7 +349,9 @@ func visit(v reflect.Value, f func(interface{})) {
 
 // Fold options preferring the ones that appear later.
 // Ex: [{Type: "foo", Value: {"bar": 1, "baz": 2}}, {Type: "foo", Value: {"bar": 3}}]
-//   becomes: {Type: "foo", Value: {"bar": 3, "baz": 2}}
+//
+//	becomes: {Type: "foo", Value: {"bar": 3, "baz": 2}}
+//
 // Note this only merges options where the top level value is a message
 // literal. If the latter value is not a message literal, the latter value
 // takes precedence. This also applies to repeated options, as repeated options
@@ -365,11 +367,11 @@ func mergeOptions(options []Option) []proto_ast.Option {
 		}
 	}
 
-	optionMap := map[Type]interface{}{}
+	optionMap := map[Type]any{}
 	for _, option := range pathsExpanded {
 		value := option.Value
-		if right, ok := option.Value.(map[string]interface{}); ok {
-			if left, ok := optionMap[option.Type].(map[string]interface{}); ok {
+		if right, ok := option.Value.(map[string]any); ok {
+			if left, ok := optionMap[option.Type].(map[string]any); ok {
 				value = mergeMessageLiterals(left, right)
 			}
 		}
@@ -391,7 +393,7 @@ func mergeOptions(options []Option) []proto_ast.Option {
 			Name:  fullName,
 			Value: optionMap[fullNameToType[fullName]],
 		}
-		if s, ok := option.Value.([]interface{}); ok {
+		if s, ok := option.Value.([]any); ok {
 			// expand out top level arrays -- it means the option itself
 			// was repeated.
 			for _, v := range s {
@@ -406,13 +408,13 @@ func mergeOptions(options []Option) []proto_ast.Option {
 }
 
 // ("foo.bar", 1) -> {"foo": {"bar": 1}}
-func expandPath(path string, value interface{}) interface{} {
+func expandPath(path string, value any) any {
 	if path == "" {
 		return value
 	}
 	items := strings.Split(path, ".")
 	for i := len(items) - 1; i >= 0; i-- {
-		value = map[string]interface{}{items[i]: value}
+		value = map[string]any{items[i]: value}
 	}
 	return value
 }
@@ -422,13 +424,13 @@ func expandPath(path string, value interface{}) interface{} {
 // enum value literals will come in the form:
 // {"reserved": "__enum_value_literal__", "name": "{name}"}
 // some objects or arrays may have nil values, those will be removed
-func normalizeToProtoAST(value interface{}) interface{} {
-	if m, ok := value.(map[string]interface{}); ok {
+func normalizeToProtoAST(value any) any {
+	if m, ok := value.(map[string]any); ok {
 		if m["reserved"] == "__enum_value_literal__" {
 			return proto_ast.EnumValueLiteral(m["name"].(string))
 		}
 		if m["reserved"] == "__bytes_literal__" {
-			arr := m["value"].([]interface{})
+			arr := m["value"].([]any)
 			bytes := make([]byte, len(arr))
 			for i, v := range arr {
 				fv := v.(float64)
@@ -439,7 +441,7 @@ func normalizeToProtoAST(value interface{}) interface{} {
 			}
 			return bytes
 		}
-		newValue := map[string]interface{}{}
+		newValue := map[string]any{}
 		for k, v := range m {
 			if v != nil {
 				newValue[k] = normalizeToProtoAST(v)
@@ -447,8 +449,8 @@ func normalizeToProtoAST(value interface{}) interface{} {
 		}
 		return newValue
 	}
-	if s, ok := value.([]interface{}); ok {
-		newValue := make([]interface{}, len(s))
+	if s, ok := value.([]any); ok {
+		newValue := make([]any, len(s))
 		for i, v := range s {
 			if v != nil {
 				newValue[i] = normalizeToProtoAST(v)
@@ -459,12 +461,12 @@ func normalizeToProtoAST(value interface{}) interface{} {
 	return value
 }
 
-func mergeMessageLiterals(left, right map[string]interface{}) map[string]interface{} {
-	result := map[string]interface{}{}
+func mergeMessageLiterals(left, right map[string]any) map[string]any {
+	result := map[string]any{}
 	for k, v := range left {
-		if l, ok := v.(map[string]interface{}); ok {
+		if l, ok := v.(map[string]any); ok {
 			if r, ok := right[k]; ok {
-				if r, ok := r.(map[string]interface{}); ok {
+				if r, ok := r.(map[string]any); ok {
 					result[k] = mergeMessageLiterals(l, r)
 				}
 			} // else case shouldn't be possible, but if it happens r will overwite l later
@@ -472,7 +474,7 @@ func mergeMessageLiterals(left, right map[string]interface{}) map[string]interfa
 	}
 	for k, v := range right {
 		_, leftResult := result[k]
-		if _, ok := v.(map[string]interface{}); !ok || !leftResult {
+		if _, ok := v.(map[string]any); !ok || !leftResult {
 			result[k] = v
 		}
 	}

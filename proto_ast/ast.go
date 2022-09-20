@@ -11,7 +11,7 @@ type codeWriter struct {
 	indent int
 }
 
-func (w *codeWriter) printfLn(format string, a ...interface{}) {
+func (w *codeWriter) printfLn(format string, a ...any) {
 	line := fmt.Sprintf(format, a...)
 	if len(line) > 0 {
 		w.printIndent()
@@ -20,7 +20,7 @@ func (w *codeWriter) printfLn(format string, a ...interface{}) {
 	w.b.WriteByte('\n')
 }
 
-func (w *codeWriter) println(a ...interface{}) {
+func (w *codeWriter) println(a ...any) {
 	if len(a) > 0 {
 		w.printIndent()
 	}
@@ -94,18 +94,18 @@ type Declaration struct {
 type Option struct {
 	Name  string
 	Path  string // Only valid if attached to a Field or EnumValue
-	Value interface{}
+	Value any
 }
 
 type EnumValueLiteral string
 
-func fprintOptionValue(w *codeWriter, value interface{}) {
+func fprintOptionValue(w *codeWriter, value any) {
 	switch optionValue := value.(type) {
 	case bool, float64, int, EnumValueLiteral:
 		fmt.Fprint(&w.b, optionValue)
 	case []byte, string:
 		fmt.Fprintf(&w.b, "%q", optionValue)
-	case map[string]interface{}:
+	case map[string]any:
 		fmt.Fprintln(&w.b, "{")
 		w.indent += 1
 		keys := make([]string, 0, len(optionValue))
@@ -115,12 +115,12 @@ func fprintOptionValue(w *codeWriter, value interface{}) {
 		sort.Strings(keys)
 		type messageEntry struct {
 			name  string
-			value interface{}
+			value any
 		}
 		expanded := []messageEntry{}
 		for _, k := range keys {
 			value := optionValue[k]
-			if s, ok := value.([]interface{}); ok {
+			if s, ok := value.([]any); ok {
 				for _, v := range s {
 					expanded = append(expanded, messageEntry{k, v})
 				}

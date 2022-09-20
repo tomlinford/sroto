@@ -14,22 +14,22 @@ func TestMergeOptions(t *testing.T) {
 		want  []proto_ast.Option
 	}{
 		{"simple", []Option{
-			{Type: Type{Name: "foo"}, Value: map[string]interface{}{
+			{Type: Type{Name: "foo"}, Value: map[string]any{
 				"bar": 1,
 				"baz": 2,
 			}},
-			{Type: Type{Name: "foo"}, Value: map[string]interface{}{
+			{Type: Type{Name: "foo"}, Value: map[string]any{
 				"bar": 3,
 				"baz": 2,
 			}},
 		}, []proto_ast.Option{
-			{Name: "foo", Value: map[string]interface{}{
+			{Name: "foo", Value: map[string]any{
 				"bar": 3,
 				"baz": 2,
 			}},
 		}},
 		{"repeated top level", []Option{
-			{Type: Type{Name: "foo"}, Value: []interface{}{1, 2}},
+			{Type: Type{Name: "foo"}, Value: []any{1, 2}},
 		}, []proto_ast.Option{
 			{Name: "foo", Value: 1},
 			{Name: "foo", Value: 2},

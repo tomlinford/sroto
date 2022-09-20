@@ -9,21 +9,21 @@ import (
 func TestFprintOptionValue(t *testing.T) {
 	tests := []struct {
 		name  string
-		input interface{}
+		input any
 		want  string
 	}{
 		{"int", 1, "1"},
 		{"bool", true, "true"},
 		{"string", "foo", `"foo"`},
-		{"message", map[string]interface{}{
+		{"message", map[string]any{
 			"foo": "bar",
 			"baz": 1,
 		}, "{\n    baz: 1,\n    foo: \"bar\"\n}"},
-		{"nested", map[string]interface{}{
-			"foo": map[string]interface{}{"bar": 1},
+		{"nested", map[string]any{
+			"foo": map[string]any{"bar": 1},
 		}, "{\n    foo: {\n        bar: 1\n    }\n}"},
-		{"repeated", map[string]interface{}{
-			"foo": []interface{}{1, 2},
+		{"repeated", map[string]any{
+			"foo": []any{1, 2},
 		}, "{\n    foo: 1,\n    foo: 2\n}"},
 	}
 
