@@ -6,7 +6,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestFprintOptionValue(t *testing.T) {
+func TestAddOptionValue(t *testing.T) {
 	tests := []struct {
 		name  string
 		input any
@@ -18,20 +18,29 @@ func TestFprintOptionValue(t *testing.T) {
 		{"message", map[string]any{
 			"foo": "bar",
 			"baz": 1,
-		}, "{\n    baz: 1,\n    foo: \"bar\"\n}"},
+		}, "{baz: 1, foo: \"bar\"}"},
 		{"nested", map[string]any{
 			"foo": map[string]any{"bar": 1},
-		}, "{\n    foo: {\n        bar: 1\n    }\n}"},
+		}, "{foo: {bar: 1}}"},
 		{"repeated", map[string]any{
 			"foo": []any{1, 2},
-		}, "{\n    foo: [\n        1,\n        2\n    ]\n}"},
+		}, "{foo: [1, 2]}"},
+		{"long", []any{
+			"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+			2,
+		}, `[
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    2
+]`},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := new(codeWriter)
-			fprintOptionValue(w, tt.input)
-			diff := cmp.Diff(tt.want, w.b.String())
+			body := &body{}
+			addOptionValue(body, tt.input, "", "")
+			diff := cmp.Diff(tt.want, body.String())
 			if diff != "" {
 				t.Error(diff)
 			}

@@ -318,9 +318,7 @@ import "protoc-gen-openapiv2/options/annotations.proto";
 import "validate/validate.proto";
 
 message GetUserRequest {
-    string id = 1 [
-        (google.api.field_behavior) = REQUIRED
-    ];
+    string id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 message User {
@@ -333,22 +331,14 @@ message User {
             min_length: 36,
             pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
         },
-        (validate.rules) = {
-            string: {
-                uuid: true
-            }
-        }
+        (validate.rules) = {string: {uuid: true}}
     ];
     string referrer_user_id = 2 [
         (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
             min_length: 36,
             pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
         },
-        (validate.rules) = {
-            string: {
-                uuid: true
-            }
-        }
+        (validate.rules) = {string: {uuid: true}}
     ];
 }
 
@@ -480,9 +470,7 @@ import "custom_options_example.proto";
 
 message UserTable {
     option (custom_options_example.sql_table) = {
-        prev_table_name: {
-            value: "old_users"
-        },
+        prev_table_name: {value: "old_users"},
         table_bin_data: "\x00\x01\x02\x03\x04\x05\x06\a\b",
         table_name: "users",
         table_tags: {
@@ -492,35 +480,19 @@ message UserTable {
                     value: {
                         list_value: {
                             values: [
-                                {
-                                    string_value: "qux"
-                                },
-                                {
-                                    string_value: "quz"
-                                }
+                                {string_value: "qux"},
+                                {string_value: "quz"}
                             ]
                         }
                     }
                 },
-                {
-                    key: "foo",
-                    value: {
-                        string_value: "bar"
-                    }
-                },
-                {
-                    key: "teapot",
-                    value: {
-                        null_value: NULL_VALUE
-                    }
-                }
+                {key: "foo", value: {string_value: "bar"}},
+                {key: "teapot", value: {null_value: NULL_VALUE}}
             ]
         }
     };
 
-    string id = 1 [
-        (custom_options_example.sql_type) = TEXT
-    ];
+    string id = 1 [(custom_options_example.sql_type) = TEXT];
 }
 ```
 
