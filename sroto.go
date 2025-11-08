@@ -120,7 +120,7 @@ func (i *srotoJsonnetImporter) Import(importedFrom, importedPath string) (
 		return contents, foundAt, err
 	}
 	if f, err := JsonnetSources.Open(importedPath); err == nil {
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		b := strings.Builder{}
 		if _, err := io.Copy(&b, f); err != nil {
 			panic(err) // should be impossible -- everything is in-memory
@@ -180,5 +180,5 @@ func printHelp() {
 	// only show the options
 	protocHelp := regexp.MustCompile(`(?s) +-.*`).Find(out)
 	fmt.Print(srotocHelp)
-	os.Stdout.Write(protocHelp)
+	_, _ = os.Stdout.Write(protocHelp)
 }

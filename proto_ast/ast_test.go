@@ -22,6 +22,25 @@ func TestAddOptionValue(t *testing.T) {
 		{"nested", map[string]any{
 			"foo": map[string]any{"bar": 1},
 		}, "{foo: {bar: 1}}"},
+		{"deeply_nested_single", map[string]any{
+			"foo": map[string]any{"bar": map[string]any{"baz": 42}},
+		}, "{foo: {bar: {baz: 42}}}"},
+		{"single_field_bool", map[string]any{
+			"required": true,
+		}, "{required: true}"},
+		{"single_field_string", map[string]any{
+			"pattern": "^[a-z]+$",
+		}, `{pattern: "^[a-z]+$"}`},
+		{"multi_field_no_compact", map[string]any{
+			"foo": "bar",
+			"baz": 1,
+		}, "{baz: 1, foo: \"bar\"}"},
+		{"single_field_with_array", map[string]any{
+			"foo": []any{1, 2},
+		}, "{foo: [1, 2]}"},
+		{"single_field_with_multi_field_nested", map[string]any{
+			"foo": map[string]any{"bar": 1, "baz": 2},
+		}, "{foo: {bar: 1, baz: 2}}"},
 		{"repeated", map[string]any{
 			"foo": []any{1, 2},
 		}, "{foo: [1, 2]}"},

@@ -285,9 +285,12 @@ func addLineDecl(body *body, decl *Declaration) {
 
 func addShortOptions(body *body, options []Option) {
 	for i, o := range options {
+		// Try to flatten single-field nested maps into the path
+		flatPath, flatValue := flattenSingleFieldPath(o.Path, o.Value)
+
 		path := ""
-		if len(o.Path) > 0 {
-			path = "." + path
+		if len(flatPath) > 0 {
+			path = "." + flatPath
 		}
 		prefix := o.Name
 		if strings.Contains(o.Name, ".") || path != "" {
@@ -297,8 +300,63 @@ func addShortOptions(body *body, options []Option) {
 		if i < len(options)-1 {
 			suffix = ","
 		}
-		addOptionValue(body, o.Value, prefix+" = ", suffix)
+		addOptionValue(body, flatValue, prefix+" = ", suffix)
 	}
+}
+
+// flattenSingleFieldPath extracts nested single-field map keys into a dot-separated path
+// and returns the final scalar value. Returns the original path and value if not flattenable.
+func flattenSingleFieldPath(basePath string, value any) (string, any) {
+	path := basePath
+	currentValue := value
+
+	for {
+		mapVal, ok := currentValue.(map[string]any)
+		if !ok || len(mapVal) != 1 {
+			// Not a single-field map, stop here
+			break
+		}
+
+		// Extract the single key-value pair
+		var key string
+		var val any
+		for k, v := range mapVal {
+			key = k
+			val = v
+		}
+
+		// Check if the value is also a single-field map or a scalar
+		if nestedMap, isMap := val.(map[string]any); isMap {
+			if len(nestedMap) == 1 {
+				// Continue flattening
+				if path == "" {
+					path = key
+				} else {
+					path = path + "." + key
+				}
+				currentValue = val
+				continue
+			}
+		}
+
+		// Check if it's a scalar value we can flatten
+		switch val.(type) {
+		case bool, float64, int, EnumValueLiteral, []byte, string:
+			// Scalar value, we can flatten
+			if path == "" {
+				path = key
+			} else {
+				path = path + "." + key
+			}
+			return path, val
+		default:
+			// Array or multi-field map, cannot flatten further
+			break
+		}
+		break
+	}
+
+	return path, currentValue
 }
 
 func addLongOptions(body *body, options []Option) {

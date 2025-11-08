@@ -77,7 +77,7 @@ message EchoRequest {
     string message = 1;
     google.protobuf.Timestamp timestamp = 2 [
         deprecated = true,
-        (validate.rules) = {message: {required: false}}
+        (validate.rules).message.required = false
     ];
 }
 `[1:]
