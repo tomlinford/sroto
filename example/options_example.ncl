@@ -1,4 +1,4 @@
-# Example demonstrating custom options in Nickel
+# Example demonstrating custom options in Nickel - Improved version
 
 let sroto = import "../sroto.ncl" in
 
@@ -21,15 +21,10 @@ let http_api = {
   package = "google.api",
 } in
 
-# A simple custom field helper (mimicking my_custom_fields.libsonnet)
-let UUIDField = fun number =>
-  sroto.StringField number
-in
-
 sroto.File "options_example.proto" "example" {
   User = sroto.Message {
-    id = UUIDField 1,
-    referrer_user_id = UUIDField 2,
+    id = sroto.StringField 1,
+    referrer_user_id = sroto.StringField 2,
   } & {
     options = [{
       type = openapiv2Annotation "schema",
@@ -67,7 +62,7 @@ sroto.File "options_example.proto" "example" {
     }],
   },
 } & {
-  # File-level options can use the shorthand for built-in options
+  # File-level options
   options = [{
     type = { name = "go_package" },
     path = "",

@@ -1,69 +1,50 @@
-# Example Nickel file for sroto
-# This demonstrates the basic usage of the sroto Nickel frontend
+# Example Nickel file for sroto - Improved version
+# This demonstrates the clean API with automatic name extraction
 
 let sroto = import "../sroto.ncl" in
 
-sroto.File
-  "example.proto"
-  "example"
-  # Enums
-  [
-    sroto.Enum [
-      { name = "LOW", number = 1, help = "", options = [] },
-      { name = "HIGH", number = 3, help = "", options = [] },
-    ] & {
-      name = "Priority",
-      reserved_ranges = [
-        { start = 2, end = 2 },
-        { start = 4, end = null },  # null means "max"
-      ],
-      reserved_names = ["MEDIUM"],
-    },
-    sroto.Enum [
-      { name = "QUALITY_HIGH", number = 2, help = "", options = [] },
-      { name = "QUALITY_LOW", number = 1, help = "", options = [] },
-    ] & { name = "Quality" },
-  ]
-  # Messages
-  [
-    sroto.Message
-      [] # nested enums
-      [] # nested messages
-      # oneofs
-      [
-        sroto.Oneof [
-          sroto.BoolField 2 & { name = "is_important" },
-          sroto.Field "Priority" 3 & { name = "priority" },
-        ] & { name = "importance" },
-      ]
-      # fields
-      [
-        sroto.StringField 1 & { name = "message" },
-      ]
-      & { name = "EchoRequest" },
-    sroto.Message
-      [] # nested enums
-      [] # nested messages
-      [] # oneofs
-      # fields
-      [
-        sroto.StringField 1 & { name = "message" },
-      ]
-      & {
-        name = "EchoResponse",
-        help = m%"
-          EchoResponse echoes back the initial message in the EchoRequest.
+sroto.File "example.proto" "example" {
+  Priority = sroto.Enum {
+    # Note: The 0 value will be auto-generated as PRIORITY_UNSPECIFIED
+    LOW = 1,
+    HIGH = 3,
+  } & {
+    # Nickel's record merging allows adding optional fields cleanly
+    reserved_ranges = [
+      { start = 2, end = 2 },
+      { start = 4, end = null },  # null means "max"
+    ],
+    reserved_names = ["MEDIUM"],
+  },
 
-          This is used by EchoService.
-        "%,
-      },
-  ]
-  # Services
-  [
-    sroto.Service [
-      sroto.UnaryMethod "EchoRequest" "EchoResponse" & { name = "Echo" },
-      sroto.Method "EchoRequest" "EchoResponse" true true & { name = "StreamEcho" },
-    ] & { name = "EchoService" },
-  ]
-  # Custom options
-  []
+  EchoRequest = sroto.Message {
+    message = sroto.StringField 1,
+    importance = sroto.Oneof {
+      is_important = sroto.BoolField 2,
+      priority = sroto.Field "Priority" 3,
+    },
+  },
+
+  EchoResponse = sroto.Message {
+    message = sroto.StringField 1,
+  } & {
+    # Using record merging to add help text
+    help = m%"
+      EchoResponse echoes back the initial message in the EchoRequest.
+
+      This is used by EchoService.
+    "%,
+  },
+
+  EchoService = sroto.Service {
+    # UnaryMethod is just Method with false for both streaming flags
+    Echo = sroto.UnaryMethod "EchoRequest" "EchoResponse",
+    StreamEcho = sroto.Method "EchoRequest" "EchoResponse" true true,
+  },
+
+  # Enums can also be defined with arrays for explicit ordering
+  Quality = sroto.Enum [
+    sroto.EnumValue 2 & { name = "QUALITY_HIGH" },
+    sroto.EnumValue 1 & { name = "QUALITY_LOW" },
+  ],
+}
