@@ -7,6 +7,30 @@ let RecordToArray = fun record transform =>
   std.array.map (fun field_name => transform field_name (std.record.get field_name record)) fields
 in
 
+# Transform reserved shorthand: [1, [5, 10], [20, "max"], "NAME"]
+# into separate reserved_ranges and reserved_names arrays (like Jsonnet)
+let TransformReserved = fun reserved_list =>
+  let ranges = std.array.filter (fun r =>
+    %typeof% r == 'Number ||
+    (%typeof% r == 'Array && %typeof% (std.array.first r) == 'Number)
+  ) reserved_list in
+  let names = std.array.filter (fun r => %typeof% r == 'String) reserved_list in
+  {
+    reserved_ranges = std.array.map (fun r =>
+      if %typeof% r == 'Number then
+        { start = r, end = r }
+      else if std.array.length r == 2 then
+        if %typeof% (std.array.last r) == 'String then
+          { start = std.array.first r, end = null }
+        else
+          { start = std.array.first r, end = std.array.last r }
+      else
+        { start = std.array.first r, end = std.array.first r }
+    ) ranges,
+    reserved_names = names,
+  }
+in
+
 {
   # Helper function to normalize type representation
   NormalizeType = fun field_type =>
@@ -115,8 +139,10 @@ in
       help | default = "",
       values = value_array,
       options | default = [],
-      reserved_ranges | default = [],
-      reserved_names | default = [],
+      # Supports Jsonnet-style reserved shorthand: [2, [4, "max"], "MEDIUM"]
+      reserved | default = [],
+      reserved_ranges | force = (TransformReserved reserved).reserved_ranges,
+      reserved_names | force = (TransformReserved reserved).reserved_names,
     },
 
   # Oneof constructor - accepts a record of fields
@@ -162,8 +188,10 @@ in
       oneofs = std.array.map (fun x => x.value) (std.array.filter (fun x => x.category == "oneof") categorized),
       fields = std.array.map (fun x => x.value) (std.array.filter (fun x => x.category == "field") categorized),
       options | default = [],
-      reserved_ranges | default = [],
-      reserved_names | default = [],
+      # Supports Jsonnet-style reserved shorthand: [2, [4, "max"], "field_name"]
+      reserved | default = [],
+      reserved_ranges | force = (TransformReserved reserved).reserved_ranges,
+      reserved_names | force = (TransformReserved reserved).reserved_names,
     },
 
   # Method constructor

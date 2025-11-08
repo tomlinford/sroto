@@ -251,7 +251,26 @@ For field options:
 
 ### Reserved Fields
 
-Add reserved field numbers and names:
+Nickel supports two styles for defining reserved fields: a shorthand style (like Jsonnet) and an explicit style.
+
+**Shorthand style (recommended):**
+
+```nickel
+MyEnum = sroto.Enum {
+  LOW = 1,
+  HIGH = 3,
+} & {
+  # Mix numbers, ranges, and names in a single array
+  reserved = [
+    2,              # Single field number
+    [10, 20],       # Range from 10 to 20
+    [100, "max"],   # Range from 100 to max
+    "DEPRECATED",   # Reserved name
+  ],
+}
+```
+
+**Explicit style:**
 
 ```nickel
 MyEnum = sroto.Enum {
@@ -266,6 +285,8 @@ MyEnum = sroto.Enum {
   reserved_names = ["DEPRECATED_VALUE"],
 }
 ```
+
+The shorthand style automatically transforms the `reserved` array into separate `reserved_ranges` and `reserved_names` arrays. Both styles work for enums and messages.
 
 ### Well-Known Types
 

@@ -9,12 +9,8 @@ sroto.File "example.proto" "example" {
     LOW = 1,
     HIGH = 3,
   } & {
-    # Nickel's record merging allows adding optional fields cleanly
-    reserved_ranges = [
-      { start = 2, end = 2 },
-      { start = 4, end = null },  # null means "max"
-    ],
-    reserved_names = ["MEDIUM"],
+    # Jsonnet-style reserved shorthand: numbers, ranges, and names
+    reserved = [2, [4, "max"], "MEDIUM"],
   },
 
   EchoRequest = sroto.Message {

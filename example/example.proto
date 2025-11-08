@@ -6,8 +6,8 @@ package example;
 
 enum Priority {
     PRIORITY_UNSPECIFIED = 0;
-    LOW = 1;
     HIGH = 3;
+    LOW = 1;
 
     reserved 2;
     reserved 4 to max;
