@@ -1,12 +1,12 @@
-Usage: srotoc [OPTIONS] [JSONNET_FILES] [PROTO_FILES]
+Usage: srotoc [OPTIONS] [JSONNET_FILES] [NICKEL_FILES] [PROTO_FILES]
 `srotoc` is a light wrapper around `protoc` and can be used as a drop-in
-replacement.  If JSONNET_FILES are provided, it will first parse the files
-and generate protobuf source files.  Any protobuf source files as well as the
-initial PROTO_FILES specified will then be passed into a `protoc` call.  Note
-that JSONNET_FILES must be suffixed with `.jsonnet` and PROTO_FILES must be
-suffixed with `.proto`. 
+replacement.  If JSONNET_FILES or NICKEL_FILES are provided, it will first
+parse the files and generate protobuf source files.  Any protobuf source files
+as well as the initial PROTO_FILES specified will then be passed into a `protoc`
+call.  Note that JSONNET_FILES must be suffixed with `.jsonnet`, NICKEL_FILES
+must be suffixed with `.ncl`, and PROTO_FILES must be suffixed with `.proto`.
 
-These options are specific to the jsonnet -> protobuf conversion:
+These options are specific to the jsonnet/nickel -> protobuf conversion:
   -JJPATH, --jpath=JPATH      Specify additional directories in which to
                               search for jsonnet imports.  May be specified
                               multiple times; directories will be searched in
@@ -14,6 +14,7 @@ These options are specific to the jsonnet -> protobuf conversion:
                               attempted to be resolved relative to the file
                               performing the import.
   --proto_out=OUT_DIR         Generate Protobuf source files.  Must be
-                              specified if any jsonnet files are provided.
+                              specified if any jsonnet or nickel files are
+                              provided.
 
 The remaining options are transparently passed to `protoc`:
