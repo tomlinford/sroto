@@ -31,7 +31,7 @@ func TestPopulateExamplesUpToDate(t *testing.T) {
 		if f, err := os.Open(string(arr[1])); err != nil {
 			t.Error(err)
 		} else {
-			f.Close()
+			_ = f.Close()
 		}
 	}
 }
