@@ -40,25 +40,81 @@ in
       field_type,
 
   # Well-known types from google.protobuf
-  WKT = {
-    Any = { name = "Any", package = "google.protobuf", filename = "google/protobuf/any.proto" },
-    Duration = { name = "Duration", package = "google.protobuf", filename = "google/protobuf/duration.proto" },
-    Empty = { name = "Empty", package = "google.protobuf", filename = "google/protobuf/empty.proto" },
-    Timestamp = { name = "Timestamp", package = "google.protobuf", filename = "google/protobuf/timestamp.proto" },
-    Value = { name = "Value", package = "google.protobuf", filename = "google/protobuf/struct.proto" },
-    Struct = { name = "Struct", package = "google.protobuf", filename = "google/protobuf/struct.proto" },
-    ListValue = { name = "ListValue", package = "google.protobuf", filename = "google/protobuf/struct.proto" },
-    DoubleValue = { name = "DoubleValue", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
-    FloatValue = { name = "FloatValue", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
-    Int64Value = { name = "Int64Value", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
-    UInt64Value = { name = "UInt64Value", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
-    Int32Value = { name = "Int32Value", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
-    UInt32Value = { name = "UInt32Value", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
-    BoolValue = { name = "BoolValue", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
-    StringValue = { name = "StringValue", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
-    BytesValue = { name = "BytesValue", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
-    FieldMask = { name = "FieldMask", package = "google.protobuf", filename = "google/protobuf/field_mask.proto" },
-  },
+  WKT =
+    let bytesLiteral_def = fun bytes_array => {
+      reserved = "__bytes_literal__",
+      value = bytes_array,
+    } in
+
+    let enumValueLiteral_def = fun enum_name => {
+      reserved = "__enum_value_literal__",
+      name = enum_name,
+    } in
+
+    let mapLiteral_def = fun map =>
+      let fields = %record/fields% map in
+      std.array.map (fun k => { key = k, value = std.record.get k map }) fields in
+
+    # Mutually recursive literal value constructors for struct types
+    let rec literals = {
+      listValueLiteral = fun list_vals =>
+        if list_vals == null then null
+        else { values = std.array.map (fun v => literals.valueLiteral v) list_vals },
+
+      structLiteral = fun struct_val =>
+        if struct_val == null then null
+        else
+          let field_keys = %record/fields% struct_val in
+          {
+            fields = std.array.map (fun k =>
+              { key = k, value = literals.valueLiteral (std.record.get k struct_val) }
+            ) field_keys
+          },
+
+      valueLiteral = fun val =>
+        if val == null then { null_value = enumValueLiteral_def "NULL_VALUE" }
+        else if %typeof% val == 'Number then { number_value = val }
+        else if %typeof% val == 'String then { string_value = val }
+        else if %typeof% val == 'Bool then { bool_value = val }
+        else if %typeof% val == 'Record then { struct_value = literals.structLiteral val }
+        else if %typeof% val == 'Array then { list_value = literals.listValueLiteral val }
+        else std.contract.blame_with_message "invalid type for ValueLiteral" val,
+    } in
+
+    # Type definitions and literal constructors
+    {
+      Any = { name = "Any", package = "google.protobuf", filename = "google/protobuf/any.proto" },
+      Duration = { name = "Duration", package = "google.protobuf", filename = "google/protobuf/duration.proto" },
+      Empty = { name = "Empty", package = "google.protobuf", filename = "google/protobuf/empty.proto" },
+      Timestamp = { name = "Timestamp", package = "google.protobuf", filename = "google/protobuf/timestamp.proto" },
+      Value = { name = "Value", package = "google.protobuf", filename = "google/protobuf/struct.proto" },
+      Struct = { name = "Struct", package = "google.protobuf", filename = "google/protobuf/struct.proto" },
+      ListValue = { name = "ListValue", package = "google.protobuf", filename = "google/protobuf/struct.proto" },
+      DoubleValue = { name = "DoubleValue", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
+      FloatValue = { name = "FloatValue", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
+      Int64Value = { name = "Int64Value", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
+      UInt64Value = { name = "UInt64Value", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
+      Int32Value = { name = "Int32Value", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
+      UInt32Value = { name = "UInt32Value", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
+      BoolValue = { name = "BoolValue", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
+      StringValue = { name = "StringValue", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
+      BytesValue = { name = "BytesValue", package = "google.protobuf", filename = "google/protobuf/wrappers.proto" },
+      FieldMask = { name = "FieldMask", package = "google.protobuf", filename = "google/protobuf/field_mask.proto" },
+
+      # Literal value constructors for well-known wrapper types
+      BoolValueLiteral = fun v => if v == null then null else { value = v },
+      BytesValueLiteral = fun v => if v == null then null else { value = bytesLiteral_def v },
+      DoubleValueLiteral = fun v => if v == null then null else { value = v },
+      FloatValueLiteral = fun v => if v == null then null else { value = v },
+      Int32ValueLiteral = fun v => if v == null then null else { value = v },
+      Int64ValueLiteral = fun v => if v == null then null else { value = v },
+      StringValueLiteral = fun v => if v == null then null else { value = v },
+      UInt32ValueLiteral = fun v => if v == null then null else { value = v },
+      UInt64ValueLiteral = fun v => if v == null then null else { value = v },
+      ListValueLiteral = literals.listValueLiteral,
+      StructLiteral = literals.structLiteral,
+      ValueLiteral = literals.valueLiteral,
+    },
 
   # Enum value literal constructor (for use in option values)
   EnumValueLiteral = fun enum_name => {
@@ -71,6 +127,11 @@ in
     reserved = "__bytes_literal__",
     value = bytes_array,
   },
+
+  # Map literal constructor (converts object to protobuf map format)
+  MapLiteral = fun map =>
+    let fields = %record/fields% map in
+    std.array.map (fun k => { key = k, value = std.record.get k map }) fields,
 
   # Field constructor - creates a field with a given type and number
   Field = fun field_type field_number => {
@@ -134,7 +195,7 @@ in
             if has_name then val else val & { name = field_name }
         )
     in
-    {
+    let enum_base = {
       name | default = "",
       help | default = "",
       values = value_array,
@@ -143,7 +204,10 @@ in
       reserved | default = [],
       reserved_ranges | force = (TransformReserved reserved).reserved_ranges,
       reserved_names | force = (TransformReserved reserved).reserved_names,
-    },
+    } in
+    # For record-based enums, merge the original values back so they can be accessed
+    # (e.g., custom_options_example.SQLType.TEXT)
+    if is_array then enum_base else values & enum_base,
 
   # Oneof constructor - accepts a record of fields
   Oneof = fun fields_record =>
@@ -308,7 +372,9 @@ in
           else "unknown"
       }
     ) in
-    {
+    # Return the IR structure merged with the original definitions
+    # This allows importing files and accessing their definitions (like example.Priority)
+    definitions & {
       name = file_name,
       package = file_package,
       enums = std.array.map (fun x => x.value) (std.array.filter (fun x => x.category == "enum") categorized),
