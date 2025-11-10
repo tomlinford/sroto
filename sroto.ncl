@@ -7,6 +7,17 @@ let RecordToArray = fun record transform =>
   std.array.map (fun field_name => transform field_name (std.record.get field_name record)) fields
 in
 
+# Sort array by a key function (Nickel doesn't have std.array.sort_by built-in)
+let SortBy = fun key_fn array =>
+  let with_keys = std.array.map (fun elem => { key = key_fn elem, value = elem }) array in
+  let sorted = std.array.sort (fun a b =>
+    if a.key < b.key then 'Lesser
+    else if a.key > b.key then 'Greater
+    else 'Equal
+  ) with_keys in
+  std.array.map (fun x => x.value) sorted
+in
+
 # Transform reserved shorthand: [1, [5, 10], [20, "max"], "NAME"]
 # into separate reserved_ranges and reserved_names arrays (like Jsonnet)
 let TransformReserved = fun reserved_list =>
@@ -195,10 +206,16 @@ in
             if has_name then val else val & { name = field_name }
         )
     in
+    # Sort enum values by number ONLY for record-style (matching Jsonnet's behavior)
+    # Array-style enums preserve insertion order
+    let final_values =
+      if is_array then value_array
+      else SortBy (fun v => v.number) value_array
+    in
     let enum_base = {
       name | default = "",
       help | default = "",
-      values = value_array,
+      values = final_values,
       options | default = [],
       # Supports Jsonnet-style reserved shorthand: [2, [4, "max"], "MEDIUM"]
       reserved | default = [],
@@ -244,13 +261,16 @@ in
           else "unknown"
       }
     ) in
+    let field_values = std.array.map (fun x => x.value) (std.array.filter (fun x => x.category == "field") categorized) in
+    # Sort fields by their number (matching Jsonnet's behavior)
+    let sorted_fields = SortBy (fun f => f.number) field_values in
     {
       name | default = "",
       help | default = "",
       enums = std.array.map (fun x => x.value) (std.array.filter (fun x => x.category == "enum") categorized),
       messages = std.array.map (fun x => x.value) (std.array.filter (fun x => x.category == "message") categorized),
       oneofs = std.array.map (fun x => x.value) (std.array.filter (fun x => x.category == "oneof") categorized),
-      fields = std.array.map (fun x => x.value) (std.array.filter (fun x => x.category == "field") categorized),
+      fields = sorted_fields,
       options | default = [],
       # Supports Jsonnet-style reserved shorthand: [2, [4, "max"], "field_name"]
       reserved | default = [],
