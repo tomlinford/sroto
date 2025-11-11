@@ -249,53 +249,53 @@ in
     std.array.map (fun k => { key = k, value = std.record.get k map }) fields,
 
   # Field constructor - creates a field with a given type and number
-  Field = fun field_type field_number => {
+  Field = fun field_type field_number (options | default = []) => {
     name | default = "",
     help | default = "",
     number = field_number,
     type = (fun t => if %typeof% t == 'String then { name = t } else t) field_type,
     label | default = "",
-    options | default = [],
+    options = options,
   },
 
   # Convenience field constructors for common types
-  DoubleField = fun n => { name | default = "", help | default = "", number = n, type = { name = "double" }, label | default = "", options | default = [] },
-  FloatField = fun n => { name | default = "", help | default = "", number = n, type = { name = "float" }, label | default = "", options | default = [] },
-  Int32Field = fun n => { name | default = "", help | default = "", number = n, type = { name = "int32" }, label | default = "", options | default = [] },
-  Int64Field = fun n => { name | default = "", help | default = "", number = n, type = { name = "int64" }, label | default = "", options | default = [] },
-  Uint32Field = fun n => { name | default = "", help | default = "", number = n, type = { name = "uint32" }, label | default = "", options | default = [] },
-  Uint64Field = fun n => { name | default = "", help | default = "", number = n, type = { name = "uint64" }, label | default = "", options | default = [] },
-  Sint32Field = fun n => { name | default = "", help | default = "", number = n, type = { name = "sint32" }, label | default = "", options | default = [] },
-  Sint64Field = fun n => { name | default = "", help | default = "", number = n, type = { name = "sint64" }, label | default = "", options | default = [] },
-  Fixed32Field = fun n => { name | default = "", help | default = "", number = n, type = { name = "fixed32" }, label | default = "", options | default = [] },
-  Fixed64Field = fun n => { name | default = "", help | default = "", number = n, type = { name = "fixed64" }, label | default = "", options | default = [] },
-  Sfixed32Field = fun n => { name | default = "", help | default = "", number = n, type = { name = "sfixed32" }, label | default = "", options | default = [] },
-  Sfixed64Field = fun n => { name | default = "", help | default = "", number = n, type = { name = "sfixed64" }, label | default = "", options | default = [] },
-  BoolField = fun n => { name | default = "", help | default = "", number = n, type = { name = "bool" }, label | default = "", options | default = [] },
-  StringField = fun n => { name | default = "", help | default = "", number = n, type = { name = "string" }, label | default = "", options | default = [] },
-  BytesField = fun n => { name | default = "", help | default = "", number = n, type = { name = "bytes" }, label | default = "", options | default = [] },
+  DoubleField = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "double" }, label | default = "", options = options },
+  FloatField = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "float" }, label | default = "", options = options },
+  Int32Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "int32" }, label | default = "", options = options },
+  Int64Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "int64" }, label | default = "", options = options },
+  Uint32Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "uint32" }, label | default = "", options = options },
+  Uint64Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "uint64" }, label | default = "", options = options },
+  Sint32Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "sint32" }, label | default = "", options = options },
+  Sint64Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "sint64" }, label | default = "", options = options },
+  Fixed32Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "fixed32" }, label | default = "", options = options },
+  Fixed64Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "fixed64" }, label | default = "", options = options },
+  Sfixed32Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "sfixed32" }, label | default = "", options = options },
+  Sfixed64Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "sfixed64" }, label | default = "", options = options },
+  BoolField = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "bool" }, label | default = "", options = options },
+  StringField = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "string" }, label | default = "", options = options },
+  BytesField = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "bytes" }, label | default = "", options = options },
 
   # Repeated field constructor
-  RepeatedField = fun field_type field_number => {
+  RepeatedField = fun field_type field_number (options | default = []) => {
     name | default = "",
     help | default = "",
     number = field_number,
     type = (fun t => if %typeof% t == 'String then { name = t } else t) field_type,
     label = "repeated",
-    options | default = [],
+    options = options,
   },
 
   # Enum value constructor - can be just a number or an object
-  EnumValue = fun ev_number => {
+  EnumValue = fun ev_number (options | default = []) => {
     name | default = "",
     help | default = "",
     number = ev_number,
-    options | default = [],
+    options = options,
   },
 
   # Enum constructor - accepts either a record {LOW = 1, HIGH = 2} or array of values
   # Supports reserved field shorthand: reserved = [1, [5, "max"], "OLD_NAME"]
-  Enum = fun values =>
+  Enum = fun values (options | default = []) =>
     let is_array = %typeof% values == 'Array in
     let value_array =
       if is_array then
@@ -320,7 +320,7 @@ in
       name | default = "",
       help | default = "",
       values = final_values,
-      options | default = [],
+      options = options,
       # Supports Jsonnet-style reserved shorthand: [2, [4, "max"], "MEDIUM"]
       reserved | default = [],
       reserved_ranges | force = (TransformReserved reserved).reserved_ranges,
@@ -337,7 +337,7 @@ in
       enum_value_record & enum_base,
 
   # Oneof constructor - accepts a record of fields
-  Oneof = fun fields_record =>
+  Oneof = fun fields_record (options | default = []) =>
     let field_array = RecordToArray fields_record (fun field_name field_val =>
       let has_name = %record/has_field% "name" field_val && field_val.name != "" in
       if has_name then field_val else field_val & { name = field_name }
@@ -346,11 +346,11 @@ in
       name | default = "",
       help | default = "",
       fields = field_array,
-      options | default = [],
+      options = options,
     },
 
   # Message constructor - accepts a record of definitions (fields, nested messages, enums, oneofs)
-  Message = fun definitions =>
+  Message = fun definitions (options | default = []) =>
     let HasField = fun obj field => %record/has_field% field obj in
     let categorized = RecordToArray definitions (fun def_name def_val =>
       # Categorize based on structure
@@ -381,7 +381,7 @@ in
       messages = std.array.map (fun x => x.value) (std.array.filter (fun x => x.category == "message") categorized),
       oneofs = std.array.map (fun x => x.value) (std.array.filter (fun x => x.category == "oneof") categorized),
       fields = sorted_fields,
-      options | default = [],
+      options = options,
       # Supports Jsonnet-style reserved shorthand: [2, [4, "max"], "field_name"]
       reserved | default = [],
       reserved_ranges | force = (TransformReserved reserved).reserved_ranges,
@@ -389,29 +389,29 @@ in
     },
 
   # Method constructor
-  Method = fun in_type out_type client_stream server_stream => {
+  Method = fun in_type out_type client_stream server_stream (options | default = []) => {
     name | default = "",
     help | default = "",
     input_type = (fun t => if %typeof% t == 'String then { name = t } else t) in_type,
     output_type = (fun t => if %typeof% t == 'String then { name = t } else t) out_type,
     client_streaming = client_stream,
     server_streaming = server_stream,
-    options | default = [],
+    options = options,
   },
 
   # Unary method convenience constructor
-  UnaryMethod = fun in_type out_type => {
+  UnaryMethod = fun in_type out_type (options | default = []) => {
     name | default = "",
     help | default = "",
     input_type = (fun t => if %typeof% t == 'String then { name = t } else t) in_type,
     output_type = (fun t => if %typeof% t == 'String then { name = t } else t) out_type,
     client_streaming = false,
     server_streaming = false,
-    options | default = [],
+    options = options,
   },
 
   # Service constructor - accepts a record of methods
-  Service = fun methods_record =>
+  Service = fun methods_record (options | default = []) =>
     let method_array = RecordToArray methods_record (fun method_name method_val =>
       let has_name = %record/has_field% "name" method_val && method_val.name != "" in
       if has_name then method_val else method_val & { name = method_name }
@@ -420,7 +420,7 @@ in
       name | default = "",
       help | default = "",
       methods = method_array,
-      options | default = [],
+      options = options,
     },
 
   # Custom option constructors
@@ -482,8 +482,8 @@ in
   },
 
   # File constructor - accepts a record of definitions and optional file-level options
-  # file_options: array of file-level options (can be [] for no options)
-  File = fun file_name file_package definitions file_options =>
+  # options: array of file-level options (defaults to [] if not provided)
+  File = fun file_name file_package definitions (options | default = []) =>
     let HasField = fun obj field => %record/has_field% field obj in
     # Add package and filename to all top-level type definitions
     let field_names = %record/fields% definitions in
@@ -560,6 +560,6 @@ in
       services = services_normalized,
       custom_options = custom_options_normalized,
       # Normalize file options (handles shorthand {go_package: "..."} format)
-      options = std.array.map NormalizeOption file_options,
+      options = std.array.map NormalizeOption options,
     },
 }
