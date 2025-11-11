@@ -1,4 +1,4 @@
-let sroto = import "../sroto.ncl" in
+let sroto = import "sroto.ncl" in
 
 sroto.File "custom_options_example.proto" "custom_options_example" {
   SQLTableOptions = sroto.Message {
@@ -16,4 +16,4 @@ sroto.File "custom_options_example.proto" "custom_options_example" {
     TEXT = 2,
   },
   sql_type = sroto.CustomFieldOption "SQLType" 6073,
-}
+} []

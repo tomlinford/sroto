@@ -1,4 +1,4 @@
-let sroto = import "../sroto.ncl" in
+let sroto = import "sroto.ncl" in
 
 {
   UUIDField = fun number => sroto.StringField number & {

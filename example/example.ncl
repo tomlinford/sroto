@@ -1,7 +1,7 @@
 # Example Nickel file for sroto - Improved version
 # This demonstrates the clean API with automatic name extraction
 
-let sroto = import "../sroto.ncl" in
+let sroto = import "sroto.ncl" in
 
 sroto.File "example.proto" "example" {
   Priority = sroto.Enum {
@@ -43,4 +43,4 @@ sroto.File "example.proto" "example" {
     sroto.EnumValue 2 & { name = "QUALITY_HIGH" },
     sroto.EnumValue 1 & { name = "QUALITY_LOW" },
   ],
-}
+} []

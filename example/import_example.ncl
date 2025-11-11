@@ -1,4 +1,4 @@
-let sroto = import "../sroto.ncl" in
+let sroto = import "sroto.ncl" in
 # importing from another sroto file
 let example = import "example.ncl" in
 
@@ -18,4 +18,4 @@ sroto.File "import_example.proto" "import_example" {
     # so the above could be simplified by doing:
     updated_at = sroto.Field sroto.WKT.Timestamp 4,
   },
-}
+} []
