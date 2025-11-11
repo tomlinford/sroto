@@ -1,4 +1,4 @@
-let sroto = import "../sroto.ncl" in
+let sroto = import "sroto.ncl" in
 let my_custom_fields = import "my_custom_fields.ncl" in
 
 # "import" the custom options

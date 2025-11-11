@@ -258,22 +258,33 @@ in
     options = options,
   },
 
+  # Helper to create typed field constructors
+  MakeFieldConstructor = fun type_name =>
+    fun n (options | default = []) => {
+      name | default = "",
+      help | default = "",
+      number = n,
+      type = { name = type_name },
+      label | default = "",
+      options = options,
+    },
+
   # Convenience field constructors for common types
-  DoubleField = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "double" }, label | default = "", options = options },
-  FloatField = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "float" }, label | default = "", options = options },
-  Int32Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "int32" }, label | default = "", options = options },
-  Int64Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "int64" }, label | default = "", options = options },
-  Uint32Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "uint32" }, label | default = "", options = options },
-  Uint64Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "uint64" }, label | default = "", options = options },
-  Sint32Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "sint32" }, label | default = "", options = options },
-  Sint64Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "sint64" }, label | default = "", options = options },
-  Fixed32Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "fixed32" }, label | default = "", options = options },
-  Fixed64Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "fixed64" }, label | default = "", options = options },
-  Sfixed32Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "sfixed32" }, label | default = "", options = options },
-  Sfixed64Field = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "sfixed64" }, label | default = "", options = options },
-  BoolField = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "bool" }, label | default = "", options = options },
-  StringField = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "string" }, label | default = "", options = options },
-  BytesField = fun n (options | default = []) => { name | default = "", help | default = "", number = n, type = { name = "bytes" }, label | default = "", options = options },
+  DoubleField = MakeFieldConstructor "double",
+  FloatField = MakeFieldConstructor "float",
+  Int32Field = MakeFieldConstructor "int32",
+  Int64Field = MakeFieldConstructor "int64",
+  Uint32Field = MakeFieldConstructor "uint32",
+  Uint64Field = MakeFieldConstructor "uint64",
+  Sint32Field = MakeFieldConstructor "sint32",
+  Sint64Field = MakeFieldConstructor "sint64",
+  Fixed32Field = MakeFieldConstructor "fixed32",
+  Fixed64Field = MakeFieldConstructor "fixed64",
+  Sfixed32Field = MakeFieldConstructor "sfixed32",
+  Sfixed64Field = MakeFieldConstructor "sfixed64",
+  BoolField = MakeFieldConstructor "bool",
+  StringField = MakeFieldConstructor "string",
+  BytesField = MakeFieldConstructor "bytes",
 
   # Repeated field constructor
   RepeatedField = fun field_type field_number (options | default = []) => {
@@ -310,12 +321,8 @@ in
             if has_name then val else (std.record.remove "name" val) & { name = field_name }
         )
     in
-    # Sort enum values by number ONLY for record-style (matching Jsonnet's behavior)
-    # Array-style enums preserve insertion order
-    let final_values =
-      if is_array then value_array
-      else SortBy (fun v => v.number) value_array
-    in
+    # Sort enum values by number for both record-style and array-style enums
+    let final_values = SortBy (fun v => v.number) value_array in
     let enum_base = {
       name | default = "",
       help | default = "",
@@ -433,53 +440,25 @@ in
     label | default = "",
   },
 
-  CustomFileOption = fun ctype cnumber => {
-    name | default = "", help | default = "", number = cnumber,
-    type = (fun t => if %typeof% t == 'String then { name = t } else t) ctype,
-    option_type = "file_option", label | default = "",
-  },
+  # Helper to create custom option constructors for specific types
+  MakeCustomOptionConstructor = fun option_type_name =>
+    fun ctype cnumber => {
+      name | default = "",
+      help | default = "",
+      number = cnumber,
+      type = (fun t => if %typeof% t == 'String then { name = t } else t) ctype,
+      option_type = option_type_name,
+      label | default = "",
+    },
 
-  CustomMessageOption = fun ctype cnumber => {
-    name | default = "", help | default = "", number = cnumber,
-    type = (fun t => if %typeof% t == 'String then { name = t } else t) ctype,
-    option_type = "message_option", label | default = "",
-  },
-
-  CustomFieldOption = fun ctype cnumber => {
-    name | default = "", help | default = "", number = cnumber,
-    type = (fun t => if %typeof% t == 'String then { name = t } else t) ctype,
-    option_type = "field_option", label | default = "",
-  },
-
-  CustomOneofOption = fun ctype cnumber => {
-    name | default = "", help | default = "", number = cnumber,
-    type = (fun t => if %typeof% t == 'String then { name = t } else t) ctype,
-    option_type = "oneof_option", label | default = "",
-  },
-
-  CustomEnumOption = fun ctype cnumber => {
-    name | default = "", help | default = "", number = cnumber,
-    type = (fun t => if %typeof% t == 'String then { name = t } else t) ctype,
-    option_type = "enum_option", label | default = "",
-  },
-
-  CustomEnumValueOption = fun ctype cnumber => {
-    name | default = "", help | default = "", number = cnumber,
-    type = (fun t => if %typeof% t == 'String then { name = t } else t) ctype,
-    option_type = "enum_value_option", label | default = "",
-  },
-
-  CustomServiceOption = fun ctype cnumber => {
-    name | default = "", help | default = "", number = cnumber,
-    type = (fun t => if %typeof% t == 'String then { name = t } else t) ctype,
-    option_type = "service_option", label | default = "",
-  },
-
-  CustomMethodOption = fun ctype cnumber => {
-    name | default = "", help | default = "", number = cnumber,
-    type = (fun t => if %typeof% t == 'String then { name = t } else t) ctype,
-    option_type = "method_option", label | default = "",
-  },
+  CustomFileOption = MakeCustomOptionConstructor "file_option",
+  CustomMessageOption = MakeCustomOptionConstructor "message_option",
+  CustomFieldOption = MakeCustomOptionConstructor "field_option",
+  CustomOneofOption = MakeCustomOptionConstructor "oneof_option",
+  CustomEnumOption = MakeCustomOptionConstructor "enum_option",
+  CustomEnumValueOption = MakeCustomOptionConstructor "enum_value_option",
+  CustomServiceOption = MakeCustomOptionConstructor "service_option",
+  CustomMethodOption = MakeCustomOptionConstructor "method_option",
 
   # File constructor - accepts a record of definitions and optional file-level options
   # options: array of file-level options (defaults to [] if not provided)

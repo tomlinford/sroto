@@ -193,7 +193,17 @@ func getNickelIRFileData(nickelFiles []string) map[string][]json.RawMessage {
 	}
 
 	for _, nickelFile := range nickelFiles {
-		cmd := exec.Command("nickel", "export", "--format", "json", nickelFile)
+		// Get the directory of the file to add as import path
+		fileDir := filepath.Dir(nickelFile)
+		parentDir := filepath.Join(fileDir, "..")
+
+		// Add import paths: current directory, parent directory, and current working directory
+		cmd := exec.Command("nickel", "export",
+			"--import-path", ".",
+			"--import-path", fileDir,
+			"--import-path", parentDir,
+			"--format", "json",
+			nickelFile)
 		output, err := cmd.Output()
 		if err != nil {
 			if exitErr, ok := err.(*exec.ExitError); ok {

@@ -1,4 +1,4 @@
-let sroto = import "../sroto.ncl" in
+let sroto = import "sroto.ncl" in
 let custom_options_example = import "custom_options_example.ncl" in
 
 sroto.File "using_custom_options_example.proto" "using_custom_options_example" {
