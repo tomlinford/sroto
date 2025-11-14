@@ -160,9 +160,9 @@ func getIRFileData(jsonnetFiles, jPaths []string) map[string][]json.RawMessage {
 	})
 	jsonnetSnippet := generateJsonnetSnippet(jsonnetFiles)
 	if jsonStr, err := vm.EvaluateAnonymousSnippet("-", jsonnetSnippet); err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 	} else if err := json.NewDecoder(strings.NewReader(jsonStr)).Decode(&irFileData); err != nil {
-		log.Fatal(err)
+		panic(fmt.Sprintf("parsing jsonnet output: %s", err))
 	}
 	return irFileData
 }
@@ -207,9 +207,9 @@ func getNickelIRFileData(nickelFiles []string) map[string][]json.RawMessage {
 		output, err := cmd.Output()
 		if err != nil {
 			if exitErr, ok := err.(*exec.ExitError); ok {
-				log.Fatalf("nickel export failed for %s: %s\n%s", nickelFile, err, string(exitErr.Stderr))
+				panic(fmt.Sprintf("nickel export failed for %s: %s\n%s", nickelFile, err, string(exitErr.Stderr)))
 			}
-			log.Fatalf("nickel export failed for %s: %s", nickelFile, err)
+			panic(fmt.Sprintf("nickel export failed for %s: %s", nickelFile, err))
 		}
 
 		// Check if output is an array or a single object
@@ -232,7 +232,7 @@ func getNickelIRFileData(nickelFiles []string) map[string][]json.RawMessage {
 			// Not an array, try parsing as single object
 			var irData json.RawMessage
 			if err := json.Unmarshal(output, &irData); err != nil {
-				log.Fatalf("parsing%s%s: %s", nickelFile, "json", err)
+				panic(fmt.Sprintf("parsing %s json: %s", nickelFile, err))
 			}
 			// Check if it's a library file (no name field) - skip if so
 			var checkObj map[string]interface{}

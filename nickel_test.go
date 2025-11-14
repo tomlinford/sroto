@@ -153,9 +153,9 @@ func TestNickelImportPathResolution(t *testing.T) {
 
 sroto.File "test.proto" "test" {
   TestMessage = sroto.Message {
-    id = sroto.Int64Field 1,
-    name = sroto.StringField 2,
-  },
+    id = sroto.Int64Field 1 [],
+    name = sroto.StringField 2 [],
+  } [],
 } []
 `
 	if err := os.WriteFile(nickelFile, []byte(content), 0644); err != nil {
@@ -196,7 +196,7 @@ sroto.File "test.proto" "test" {
       [100, "max"],   # Range from 100 to max
       "DEPRECATED",   # Reserved name
     ],
-  },
+  } [],
 } []
 `
 	if err := os.WriteFile(nickelFile, []byte(content), 0644); err != nil {

@@ -313,17 +313,31 @@ in
         values
       else
         # Convert record to array of enum values, extracting names
+        # Filter out special fields like reserved, reserved_ranges, reserved_names
+        let special_fields = ["reserved", "reserved_ranges", "reserved_names", "name", "help", "options"] in
         RecordToArray values (fun field_name val =>
-          if %typeof% val == 'Number then
+          if std.array.elem field_name special_fields then
+            null  # Will be filtered out
+          else if %typeof% val == 'Number then
             { name = field_name, number = val, help | default = "", options | default = [] }
           else
             let has_name = %record/has_field% "name" val && val.name != "" in
             if has_name then val else (std.record.remove "name" val) & { name = field_name }
-        )
+        ) |> std.array.filter (fun x => x != null)
     in
     # Sort enum values by number only for record-style enums (records don't preserve order)
     # Array-style enums preserve declaration order
     let final_values = if is_array then value_array else SortBy (fun v => v.number) value_array in
+    # Extract special fields from record-based values
+    let HasField = fun obj field => %record/has_field% field obj in
+    let special_fields_record =
+      if is_array then {}
+      else
+        let r1 = if HasField values "reserved" then { reserved = values.reserved } else {} in
+        let r2 = if HasField values "name" then { name = values.name } else {} in
+        let r3 = if HasField values "help" then { help = values.help } else {} in
+        r1 & r2 & r3
+    in
     let enum_base = {
       name | default = "",
       help | default = "",
@@ -342,7 +356,7 @@ in
       let enum_value_record = std.record.from_array (
         std.array.map (fun v => { field = v.name, value = v }) final_values
       ) in
-      enum_value_record & enum_base,
+      enum_value_record & special_fields_record & enum_base,
 
   # Oneof constructor - accepts a record of fields
   Oneof = fun fields_record opts =>
@@ -472,7 +486,7 @@ in
         let field_val = std.record.get field_name definitions in
         acc & { "%{field_name}" = AddPackageInfo file_package file_name field_val }
       )
-      definitions
+      {}
       field_names
     in
     let categorized = RecordToArray defs_with_package (fun def_name def_val =>
