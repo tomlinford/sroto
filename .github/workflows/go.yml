@@ -33,7 +33,40 @@ jobs:
       with:
         version: '3.20.0'
     - uses: actions/checkout@v2
+    - name: Cache Cargo and Nickel
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: ${{ runner.os }}-cargo-nickel-1.14.0
+        restore-keys: |
+          ${{ runner.os }}-cargo-nickel-
+          ${{ runner.os }}-cargo-
+    - name: Install Nickel CLI
+      run: |
+        # Check if nickel is already cached
+        if ! command -v nickel &> /dev/null; then
+          echo "Installing Nickel CLI..."
+          # Install Rust/Cargo (needed for nickel-lang-cli)
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source "$HOME/.cargo/env"
+          # Install Nickel
+          cargo install nickel-lang-cli --version 1.14.0
+        else
+          echo "Nickel CLI already installed (from cache)"
+        fi
+        # Verify installation
+        nickel --version
     - name: Build
       run: go build -v ./...
     - name: Test
-      run: go test -v ./...
+      run: |
+        # Ensure nickel is in PATH for tests (either from cache or fresh install)
+        if [ -f "$HOME/.cargo/env" ]; then
+          source "$HOME/.cargo/env"
+        fi
+        export PATH="$HOME/.cargo/bin:$PATH"
+        go test -v ./...

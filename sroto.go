@@ -29,6 +29,7 @@ func RunSrotoc(args []string) {
 	jPaths := []string{}
 	protoOuts := []string{}
 	jsonnetFiles := []string{}
+	nickelFiles := []string{}
 
 	// arguments for protoc subcall
 	doProtocSubcall := false
@@ -47,6 +48,8 @@ func RunSrotoc(args []string) {
 			// Argument was not parsed above
 			if !strings.HasPrefix(arg, "-") && strings.HasSuffix(arg, ".jsonnet") {
 				jsonnetFiles = append(jsonnetFiles, arg)
+			} else if !strings.HasPrefix(arg, "-") && strings.HasSuffix(arg, ".ncl") {
+				nickelFiles = append(nickelFiles, arg)
 			} else {
 				if strings.Contains(arg, "_out=") {
 					doProtocSubcall = true
@@ -59,11 +62,24 @@ func RunSrotoc(args []string) {
 	if len(protoOuts) > 1 {
 		log.Fatal("too many values set for argument --proto_out=")
 	}
-	if len(protoOuts) == 0 && len(jsonnetFiles) > 0 {
-		log.Fatal("must set --proto_out if passing in .jsonnet files")
+	if len(protoOuts) == 0 && (len(jsonnetFiles) > 0 || len(nickelFiles) > 0) {
+		log.Fatal("must set --proto_out if passing in .jsonnet or .ncl files")
 	}
 
+	// Process both Jsonnet and Nickel files
+	allIRFileData := make(map[string][]json.RawMessage)
+
+	// Get IR data from Jsonnet files
 	for filename, fileDataArr := range getIRFileData(jsonnetFiles, jPaths) {
+		allIRFileData[filename] = fileDataArr
+	}
+
+	// Get IR data from Nickel files
+	for filename, fileDataArr := range getNickelIRFileData(nickelFiles) {
+		allIRFileData[filename] = fileDataArr
+	}
+
+	for filename, fileDataArr := range allIRFileData {
 		for _, fileData := range fileDataArr {
 			// parse each file separately to enable better error reporting
 			var irFile sroto_ir.File
@@ -167,6 +183,71 @@ local manifest(file) =
 	}
 	sb.WriteString("}\n")
 	return sb.String()
+}
+
+// getNickelIRFileData processes Nickel files using the nickel CLI
+func getNickelIRFileData(nickelFiles []string) map[string][]json.RawMessage {
+	irFileData := map[string][]json.RawMessage{}
+	if len(nickelFiles) == 0 {
+		return irFileData
+	}
+
+	for _, nickelFile := range nickelFiles {
+		// Get the directory of the file to add as import path
+		fileDir := filepath.Dir(nickelFile)
+		parentDir := filepath.Join(fileDir, "..")
+
+		// Add import paths: current directory, parent directory, and current working directory
+		cmd := exec.Command("nickel", "export",
+			"--import-path", ".",
+			"--import-path", fileDir,
+			"--import-path", parentDir,
+			"--format", "json",
+			nickelFile)
+		output, err := cmd.Output()
+		if err != nil {
+			if exitErr, ok := err.(*exec.ExitError); ok {
+				log.Fatalf("nickel export failed for %s: %s\n%s", nickelFile, err, string(exitErr.Stderr))
+			}
+			log.Fatalf("nickel export failed for %s: %s", nickelFile, err)
+		}
+
+		// Check if output is an array or a single object
+		var irDataArray []json.RawMessage
+		if err := json.Unmarshal(output, &irDataArray); err == nil {
+			// Successfully parsed as array, filter out library files (no name field)
+			var validFiles []json.RawMessage
+			for _, item := range irDataArray {
+				var checkObj map[string]interface{}
+				if err := json.Unmarshal(item, &checkObj); err == nil {
+					if _, hasName := checkObj["name"]; hasName {
+						validFiles = append(validFiles, item)
+					}
+				}
+			}
+			if len(validFiles) > 0 {
+				irFileData[nickelFile] = validFiles
+			}
+		} else {
+			// Not an array, try parsing as single object
+			var irData json.RawMessage
+			if err := json.Unmarshal(output, &irData); err != nil {
+				log.Fatalf("parsing%s%s: %s", nickelFile, "json", err)
+			}
+			// Check if it's a library file (no name field) - skip if so
+			var checkObj map[string]interface{}
+			if err := json.Unmarshal(irData, &checkObj); err == nil {
+				if _, hasName := checkObj["name"]; !hasName {
+					// Library file, skip it
+					continue
+				}
+			}
+			// Wrap single object in array
+			irFileData[nickelFile] = []json.RawMessage{irData}
+		}
+	}
+
+	return irFileData
 }
 
 //go:embed srotoc_help.txt

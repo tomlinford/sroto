@@ -6,11 +6,9 @@ sroto.File("example.proto", "example", {
         LOW: 1,
         HIGH: 3,
     }) {
-        // In jsonnet you can pass in a sort of "keyword argument" by doing
-        // object composition. The sroto.Enum call returns an object which is
-        // then merged with this object with only the `reserved` field set.
-        // This enables "subclasses" of these objects without requiring an
-        // exhaustive redefinition of the optional arguments.
+        // In jsonnet you can pass "keyword arguments" via object composition
+        // The sroto.Enum call returns an object which is merged with this
+        // object. This enables extending objects without exhaustive redefinition.
         reserved: [2, [4, "max"], "MEDIUM"],
     },
     EchoRequest: sroto.Message({
@@ -23,9 +21,7 @@ sroto.File("example.proto", "example", {
     EchoResponse: sroto.Message({
         message: sroto.StringField(1),
     }) {
-        // All sroto types have a `help` attribute which can be used to insert
-        // a comment before the definition in the .proto output, which then
-        // gets pulled in by the protobuf compiler.
+        // All sroto types have a `help` attribute for comments
         help: |||
             EchoResponse echoes back the initial message in the EchoRequest.
 
@@ -37,9 +33,7 @@ sroto.File("example.proto", "example", {
         Echo: sroto.UnaryMethod("EchoRequest", "EchoResponse"),
         StreamEcho: sroto.Method("EchoRequest", "EchoResponse", true, true)
     }),
-    // can also define enums with arrays, but need to specify the name. This
-    // helps in certain situations like maintaining ordering, although generally
-    // defining objects reads more cleanly.
+    // Enums can also be defined with arrays for explicit ordering
     Quality: sroto.Enum([
         sroto.EnumValue(2) {name: "QUALITY_HIGH"},
         sroto.EnumValue(1) {name: "QUALITY_LOW"},
