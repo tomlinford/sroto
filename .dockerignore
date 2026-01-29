@@ -1,0 +1,9 @@
+.git
+.github
+docs
+examples
+*.md
+.gitignore
+.dockerignore
+.vscode
+.idea
